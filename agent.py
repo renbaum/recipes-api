@@ -152,7 +152,10 @@ async def add_final_review_to_state(ctx: Context, final_review: str) -> str:
 def post_pr_review(pr_number: int, comment: str) -> str:
     """Post the final review comment to GitHub pull request given the PR number and comment."""
     pr = repo.get_pull(pr_number)
-    pr.create_review(body=comment)
+    try:
+        pr.create_review(body=comment, event="COMMENT")
+    except Exception:
+        pr.create_review(body=comment)
     return "Review posted successfully to GitHub."
 
 
@@ -168,7 +171,7 @@ context_system_prompt = """You are the context gathering agent. When gathering c
   - The details: author, title, body, diff_url, state, and head_sha; 
   - Changed files; 
   - Any requested for files; 
-Once you gather the requested info, you MUST hand control back to the Commentor Agent.
+Once you gather the requested info, you MUST call add_context_to_state tool with the gathered context and then hand control back to the CommentorAgent using the handoff tool.
 """
 
 commentor_system_prompt = """You are the commentor agent that writes review comments for pull requests as a human reviewer would.
