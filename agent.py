@@ -153,9 +153,26 @@ def post_pr_review(pr_number: int, comment: str) -> str:
     """Post the final review comment to GitHub pull request given the PR number and comment."""
     pr = repo.get_pull(pr_number)
     try:
-        pr.create_review(body=comment, event="COMMENT")
+        for r in pr.get_reviews():
+            if r.state == "PENDING":
+                try:
+                    r.delete()
+                except Exception:
+                    pass
     except Exception:
-        pr.create_review(body=comment)
+        pass
+
+    try:
+        pr.create_review(body=comment, event="COMMENT")
+    except Exception as e:
+        for r in pr.get_reviews():
+            if r.state == "PENDING":
+                try:
+                    r.submit(body=comment, event="COMMENT")
+                    return "Review posted successfully to GitHub."
+                except Exception:
+                    pass
+        raise e
     return "Review posted successfully to GitHub."
 
 
